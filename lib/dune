@@ -1,0 +1,6 @@
+(library
+ (name ocaml_lob)
+ (public_name ocaml_lob)
+ (libraries unix bigarray)
+ (ocamlopt_flags
+  (:standard -O3 -unbox-closures)))
