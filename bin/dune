@@ -1,0 +1,14 @@
+(executable
+ (name bench)
+ (public_name ocaml_lob_bench)
+ (libraries ocaml_lob unix)
+ (ocamlopt_flags
+  (:standard -O3 -unbox-closures)))
+
+(executable
+ (name server)
+ (public_name ocaml_lob_server)
+ (libraries ocaml_lob dream yojson unix)
+ (preprocess (pps lwt_ppx))
+ (ocamlopt_flags
+  (:standard -O3 -unbox-closures)))
