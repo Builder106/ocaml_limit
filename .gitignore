@@ -1,0 +1,20 @@
+# OCaml/Dune Build Artifacts
+_build/
+*.install
+.merlin
+*.native
+*.byte
+*.o
+*.a
+*.cmx
+*.cmo
+*.cmi
+*.cmxa
+*.cmxs
+
+# Editor/OS Specific
+.DS_Store
+.vscode/
+.history/
+*~
+*.swp
