@@ -1,0 +1,187 @@
+<!--
+AESTHETIC_DNA
+- Core: Terminal Obsidian (#0a0a0a)
+- Primary Accents: Bloomberg Green (#00FF00), Bloomberg Red (#FF0000), Bloomberg Cyan (#00F0FF)
+- Typography: IBM Plex Mono for Data, Inter for UI
+- Effects: Sharp borders, High Density, Zero rounded corners
+-->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL v2.7.1 | QUANT TERMINAL</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Scripts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['IBM Plex Mono', 'monospace'],
+                    },
+                    colors: {
+                        terminal: {
+                            bg: '#000000',
+                            border: '#1a1a1a',
+                            header: '#0a0a0a',
+                            cyan: '#00f0ff',
+                            green: '#00ff00',
+                            red: '#ff0000',
+                            amber: '#ffb000',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #000; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .grid-line { border-color: #1a1a1a; }
+        .panel-header { background: #0a0a0a; border-bottom: 1px solid #1a1a1a; color: #666; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .data-row:hover { background: #111; }
+        .heatmap-ask { background: rgba(153, 27, 27, 0.4); }
+        .heatmap-bid { background: rgba(21, 128, 61, 0.4); }
+        @keyframes pulse-thin { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-thin { animation: pulse-thin 2s infinite; }
+    </style>
+</head>
+<body class="bg-terminal-bg text-gray-400 font-mono min-h-screen selection:bg-terminal-cyan/30 text-[12px]">
+    <!-- Top Status Bar -->
+    <header class="h-8 bg-terminal-bg border-b border-terminal-border flex items-center justify-between px-4 text-[11px] font-bold">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2">
+                <span class="text-terminal-cyan">QUANT TERMINAL v2.7.1</span>
+                <span class="text-gray-600">|</span>
+                <span class="text-terminal-cyan">P99 LATENCY: <span id="stat-latency" class="text-white">-- μs</span></span>
+            </div>
+            <div class="text-terminal-cyan">THROUGHPUT: <span id="stat-throughput" class="text-white">-- orders/s</span></div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-4">
+                <span class="text-gray-600">CONNECTION:</span>
+                <div id="status-badge" class="flex items-center gap-2 text-terminal-red">
+                    <span class="w-2 h-2 bg-terminal-red rounded-full animate-pulse"></span>
+                    DISCONNECTED
+                </div>
+            </div>
+            <div id="terminal-clock" class="text-gray-500">2026-04-07 19:32:00</div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="grid grid-cols-12 h-[calc(100vh-2rem)] border-b border-terminal-border">
+        
+        <!-- Column 1: Order Book -->
+        <section class="col-span-3 border-r border-terminal-border flex flex-col overflow-hidden">
+            <div class="panel-header px-3 py-1">Order Book L2</div>
+            <div class="flex flex-col flex-1 overflow-hidden">
+                <!-- Table Headers -->
+                <div class="grid grid-cols-3 px-3 py-1 bg-black text-[9px] text-gray-500 border-b border-terminal-border">
+                    <div class="text-left">PRICE</div>
+                    <div class="text-right">QTY</div>
+                    <div class="text-right">CUMULATIVE</div>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto no-scrollbar font-medium">
+                    <!-- Sell Side (Asks) - Higher prices at top -->
+                    <div id="ask-book" class="flex flex-col-reverse"></div>
+                    
+                    <!-- Spread / Mid -->
+                    <div class="py-1 px-3 bg-terminal-cyan/10 border-y border-terminal-cyan/20 flex items-center justify-between text-terminal-cyan font-bold h-6">
+                        <span>SPREAD</span>
+                        <span id="spread">0.00</span>
+                    </div>
+
+                    <!-- Buy Side (Bids) - Higher prices at top -->
+                    <div id="bid-book"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Column 2 & 3: Analytics & Activity -->
+        <section class="col-span-6 flex flex-col border-r border-terminal-border overflow-hidden">
+            <!-- Liquidity Depth Chart -->
+            <div class="flex-1 flex flex-col border-b border-terminal-border overflow-hidden">
+                <div class="panel-header px-3 py-1">Liquidity Depth (DOM)</div>
+                <div class="flex-1 p-4 relative">
+                    <canvas id="depthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Risk Engine Activity -->
+            <div class="h-1/3 flex flex-col overflow-hidden">
+                <div class="panel-header px-3 py-1">Risk Engine Activity</div>
+                <div id="risk-log" class="flex-1 p-3 overflow-y-auto no-scrollbar font-mono text-[11px] space-y-1">
+                    <div class="text-gray-600 italic">Waiting for engine heartbeat...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Column 4: Trade Tape & Entry -->
+        <section class="col-span-3 flex flex-col overflow-hidden">
+            <!-- Trade Tape -->
+            <div class="flex-1 flex flex-col border-b border-terminal-border overflow-hidden">
+                <div class="panel-header px-3 py-1">Trade Tape (Real-Time)</div>
+                <div class="grid grid-cols-4 px-3 py-1 bg-black text-[9px] text-gray-500 border-b border-terminal-border">
+                    <div>TIMESTAMP</div>
+                    <div class="text-right">PRICE</div>
+                    <div class="text-right">QTY</div>
+                    <div class="text-right">SIDE</div>
+                </div>
+                <div id="trade-tape" class="flex-1 overflow-y-auto no-scrollbar font-mono p-2"></div>
+            </div>
+
+            <!-- Order Entry -->
+            <div class="h-48 flex flex-col overflow-hidden">
+                <div class="panel-header px-3 py-1">Quick Entry</div>
+                <div class="p-4 grid grid-cols-1 gap-4">
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-gray-500 uppercase">Symbol</label>
+                            <input type="text" value="AAPL" class="bg-black border border-terminal-border text-white px-2 py-1 outline-none focus:border-terminal-cyan">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-gray-500 uppercase">Price</label>
+                            <input type="text" id="order-price" value="150.25" class="bg-black border border-terminal-border text-white px-2 py-1 outline-none focus:border-terminal-cyan">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-gray-500 uppercase">Qty</label>
+                            <input type="text" id="order-qty" value="100" class="bg-black border border-terminal-border text-white px-2 py-1 outline-none focus:border-terminal-cyan">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="placeOrder('BUY')" class="h-10 bg-terminal-green/80 hover:bg-terminal-green text-black font-bold uppercase tracking-wider transition-colors">
+                            LMT BUY
+                        </button>
+                        <button onclick="placeOrder('ASK')" class="h-10 bg-terminal-red/80 hover:bg-terminal-red text-black font-bold uppercase tracking-wider transition-colors">
+                            LMT SELL
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 text-[10px]">
+                        <div>
+                            <span class="text-gray-500">POSITION:</span>
+                            <span class="text-terminal-green ml-2">+2,500</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-gray-500">UNREALIZED P&L:</span>
+                            <span class="text-terminal-green ml-2">+$20,375.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
